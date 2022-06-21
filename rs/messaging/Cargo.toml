@@ -1,0 +1,41 @@
+[package]
+name = "ic-messaging"
+version = "0.8.0"
+edition = "2018"
+
+[dependencies]
+ic-base-types = { path = "../types/base_types" }
+ic-certification-version = { path = "../canonical_state/certification_version" }
+ic-config = { path = "../config" }
+ic-constants = { path = "../constants" }
+ic-crypto-tree-hash = { path = "../crypto/tree_hash" }
+ic-crypto-utils-threshold-sig-der = { path = "../crypto/utils/threshold_sig_der" }
+ic-cycles-account-manager = { path = "../cycles_account_manager" }
+ic-error-types = { path = "../types/error_types" }
+ic-ic00-types = { path = "../types/ic00_types" }
+ic-interfaces = { path = "../interfaces" }
+ic-interfaces-state-manager = { path = "../interfaces/state_manager" }
+ic-logger = { path = "../monitoring/logger" }
+ic-metrics = { path = "../monitoring/metrics" }
+ic-protobuf = { path = "../protobuf" }
+ic-registry-client-helpers = { path = "../registry/helpers" }
+ic-registry-keys = { path = "../registry/keys" }
+ic-registry-provisional-whitelist = { path = "../registry/provisional_whitelist" }
+ic-registry-routing-table = { path = "../registry/routing_table" }
+ic-registry-subnet-features = { path = "../registry/subnet_features" }
+ic-registry-subnet-type = { path = "../registry/subnet_type" }
+ic-replicated-state = { path = "../replicated_state" }
+ic-state-layout = { path = "../state_layout" }
+ic-types = { path = "../types/types" }
+ic-utils = { path = "../utils" }
+prometheus = { version = "0.12.0", features = [ "process" ] }
+slog = { version = "2.5.2", features = ["nested-values", "max_level_trace", "release_max_level_debug"] }
+
+[dev-dependencies]
+ic-test-utilities = { path = "../test_utilities" }
+ic-test-utilities-metrics = { path = "../test_utilities/metrics" }
+lazy_static = "1.4.0"
+maplit = "1.0.2"
+mockall = "0.7.2"
+rand = "0.7.3"
+rand_chacha = "0.2.2"

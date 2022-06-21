@@ -1,0 +1,89 @@
+# This inventory file can be used together with other testnet inventory files,
+# in order to reduce config/code duplication between inventory files.
+# This is in line with the DRY principle
+# https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+#
+# Example use:
+# ansible-playbook -i env/${network}/hosts,env/shared
+
+prometheus:
+  vars:
+    stage: all
+  hosts:
+    prometheus.testnet.dfinity.network:
+
+data_centers:
+  ch1:
+    vars:
+      ipv6_prefix: "2607:f6f0:3004:1"
+      ipv6_subnet: "/64"
+  dm1:
+    vars:
+      ipv6_prefix: "2604:6800:258:1"
+      ipv6_subnet: "/64"
+  fr1:
+    vars:
+      ipv6_prefix: "2001:4d78:40d"
+      ipv6_subnet: "/64"
+  se1:
+    vars:
+      ipv6_prefix: "2600:c00:2:100"
+      ipv6_subnet: "/64"
+  sf1:
+    vars:
+      ipv6_prefix: "2607:fb58:9005:42"
+      ipv6_subnet: "/64"
+  zh1:
+    vars:
+      ipv6_prefix: "2a00:fb01:400:42"
+      ipv6_subnet: "/64"
+
+physical_hosts:
+  vars:
+    become_method: sudo
+
+nodes:
+  vars:
+    ansible_user: admin
+    become_user: root
+    become_method: sudo
+    p2p_listen_port: 4100
+    p2p_listen_ip: "{{ ipv6 }}"
+    p2p_listen_addr: "[{{ p2p_listen_ip }}]:{{ p2p_listen_port }}"
+
+    xnet_listen_port: 2497
+    xnet_listen_ip: "{{ ipv6 }}"
+    xnet_listen_addr: "[{{ xnet_listen_ip }}]:{{ xnet_listen_port }}"
+
+    api_listen_port: 8080
+    api_listen_ip: "{{ ipv6 }}"
+    api_listen_addr: "[{{ api_listen_ip }}]:{{ api_listen_port }}"
+    api_listen_protocol: http
+    api_listen_url: "{{ api_listen_protocol }}://{{ api_listen_addr }}"
+
+    metrics_listen_port: 9090
+    metrics_listen_ip: "{{ ipv6 }}"
+    metrics_listen_addr: "[{{ metrics_listen_ip }}]:{{ metrics_listen_port }}"
+
+    node_exporter_metrics_listen_ip: "{{ ipv6 }}"
+    node_exporter_metrics_listen_port: 9100
+    node_exporter_metrics_listen_addr: "[{{ node_exporter_metrics_listen_ip }}]:{{ node_exporter_metrics_listen_port }}"
+
+    orchestrator_metrics_listen_ip: "{{ ipv6 }}"
+    orchestrator_metrics_listen_port: 9091
+    orchestrator_metrics_listen_addr: "[{{ orchestrator_metrics_listen_ip }}]:{{ orchestrator_metrics_listen_port }}"
+
+    journalbeat_hosts:
+      - "elasticsearch-node-0.testnet.dfinity.systems:443"
+      - "elasticsearch-node-1.testnet.dfinity.systems:443"
+      - "elasticsearch-node-2.testnet.dfinity.systems:443"
+
+boundary:
+  vars:
+    api_listen_port: 443
+    api_listen_protocol: https
+    
+all:
+  vars:
+    ansible_python_interpreter: python3
+    become_method: sudo

@@ -1,0 +1,129 @@
+load("//third_party/lmdb-0.9.70:repository.bzl", "lmdb_repository")
+load("//third_party/lmdb-rkv-0.14.99:repository.bzl", "lmdb_rkv_repository")
+load("//third_party/wabt-rs-0.10.0:repository.bzl", "wabt_rs_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+http_archive(
+    name = "rules_rust",
+    sha256 = "872b04538ca20dad94791c348623f079ba93daf274c1d57ae6bfe0930ec77f0d",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_rust/releases/download/0.6.0/rules_rust-v0.6.0.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/releases/download/0.6.0/rules_rust-v0.6.0.tar.gz",
+    ],
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(version = "1.60.0")
+
+git_repository(
+    name = "rules_foreign_cc",
+    commit = "b1e65fec980c59cf5c2e21f7eb90fed331c36c66",
+    remote = "https://github.com/bazelbuild/rules_foreign_cc.git",
+)
+
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
+    strip_prefix = "rules_proto-4.0.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
+        "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
+    ],
+)
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository", "splicing_config")
+load("//bazel:external_crates.bzl", "external_crates_repository")
+
+external_crates_repository(
+    name = "crate_index",
+    annotations = {
+        "miracl_core_bls12381": [crate.annotation(
+            rustc_flags = [
+                "-C",
+                "opt-level=3",
+            ],
+        )],
+        "pprof": [crate.annotation(
+            build_script_data = [
+                "@com_google_protobuf//:protoc",
+            ],
+            build_script_env = {
+                "PROTOC": "$(execpath @com_google_protobuf//:protoc)",
+            },
+        )],
+        "prost-build": [crate.annotation(
+            build_script_env = {
+                "PROTOC_NO_VENDOR": "1",
+                "PROTOC": "NO_PROTOC_PATH_AT_COMPILE_TIME",
+            },
+        )],
+    },
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
+
+# We need another repository for customizing packages for Wasm targest.
+# TODO: remove the second lock file once https://github.com/bazelbuild/rules_rust/issues/1337 is fixed.
+crates_repository(
+    name = "wasm_crate_index",
+    isolated = True,
+    lockfile = "//:Wasm.Cargo.Bazel.lock",
+    packages = {
+        "getrandom": crate.spec(
+            features = ["custom"],
+            version = "=0.2.6",
+        ),
+    },
+    splicing_config = splicing_config(
+        resolver_version = "2",
+    ),
+)
+
+load("@wasm_crate_index//:defs.bzl", wasm_crate_repositories = "crate_repositories")
+
+wasm_crate_repositories()
+
+# Third party dependencies that require special treatment
+
+wabt_rs_repository(name = "wabt_rs")
+
+lmdb_repository(name = "lmdb")
+
+lmdb_rkv_repository(name = "lmdb_rkv")
+
+http_archive(
+    name = "buildifier_prebuilt",
+    sha256 = "0450069a99db3d414eff738dd8ad4c0969928af13dc8614adbd1c603a835caad",
+    strip_prefix = "buildifier-prebuilt-0.4.0",
+    urls = [
+        "http://github.com/keith/buildifier-prebuilt/archive/0.4.0.tar.gz",
+    ],
+)
+
+load("@buildifier_prebuilt//:deps.bzl", "buildifier_prebuilt_deps")
+
+buildifier_prebuilt_deps()
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
+load("@buildifier_prebuilt//:defs.bzl", "buildifier_prebuilt_register_toolchains")
+
+buildifier_prebuilt_register_toolchains()

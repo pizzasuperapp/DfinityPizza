@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package ic_sns_wasm.pb.v1;
+
+import "ic_base_types/pb/v1/types.proto";
+
+// The type of canister a particular WASM is intended to be installed on
+enum SnsCanisterType {
+  SNS_CANISTER_TYPE_UNSPECIFIED = 0;
+  // The type for the root canister
+  SNS_CANISTER_TYPE_ROOT = 1;
+  // The type for the governance canister
+  SNS_CANISTER_TYPE_GOVERNANCE = 2;
+  // The type for the ledger canister
+  SNS_CANISTER_TYPE_LEDGER = 3;
+}
+
+// The representation of a WASM along with its target canister type
+message SnsWasm {
+  bytes wasm = 1;
+  SnsCanisterType canister_type = 2;
+}
+
+// The payload for the add_wasm endpoint, which takes an SnsWasm along with the hash of the wasm bytes
+message AddWasm {
+  SnsWasm wasm = 1;
+  bytes hash = 2;
+}
+
+// The response from add_wasm, which is either Ok or Error.
+message AddWasmResponse {
+  // The error provides a reason the wasm could not be added.
+  message AddWasmError {
+    string error = 1;
+  }
+  // The Ok response provides the hash of the added WASM.
+  message AddWasmOk {
+    bytes hash = 1;
+  }
+  oneof result {
+    AddWasmError error = 1;
+    AddWasmOk ok = 2;
+  }
+}
+
+// The argument for get_wasm, which consists of the WASM hash to be retrieved.
+message GetWasm {
+  bytes hash = 1;
+}
+
+// The response for get_wasm, which returns a WASM if it is found, or None.
+message GetWasmResponse {
+  SnsWasm wasm = 1;
+}
+
+// Payload to deploy a new SNS.
+message DeployNewSns {}
+
+// The response to creating a new SNS.
+message DeployNewSnsResponse {
+  // The subnet the SNS was deployed to
+  ic_base_types.pb.v1.PrincipalId subnet_id = 1;
+  // CanisterIds of canisters created by deploy_new_sns
+  SnsCanisterIds canisters = 2;
+}
+
+// The CanisterIds of the SNS canisters that are created
+message SnsCanisterIds {
+  // PrincipalId of the root canister
+  ic_base_types.pb.v1.PrincipalId root = 1;
+  // PrincipalId of the ledger canister
+  ic_base_types.pb.v1.PrincipalId  ledger = 2;
+  // PrincipalId of the governance canister
+  ic_base_types.pb.v1.PrincipalId governance = 3;
+}
+
+// Message to list deployed sns instances
+message ListDeployedSnses {}
+
+// Response to list_deployed_snses
+message ListDeployedSnsesResponse {
+  // the deployed instances
+  repeated DeployedSns instances = 1;
+}
+
+// A deployed SNS root_canister_id
+message DeployedSns {
+  // PrincipalId of the root canister of the sns
+  ic_base_types.pb.v1.PrincipalId root_canister_id = 1;
+}

@@ -1,0 +1,32 @@
+[package]
+name = "ic-sns-test-utils"
+version = "0.8.0"
+edition = "2018"
+
+[dependencies]
+lazy_static = "1.4.0"
+candid = "0.7.4"
+canister-test = { path = "../../rust_canisters/canister_test" }
+dfn_candid = { path = "../../rust_canisters/dfn_candid" }
+dfn_protobuf = { path = "../../rust_canisters/dfn_protobuf" }
+futures = "0.3.8"
+ic-canister-client = { path = "../../canister_client" }
+ic-config = { path = "../../config" }
+ic-crypto-sha = { path = "../../crypto/sha" }
+ic-nervous-system-common = { path = "../../nervous_system/common" }
+ic-nervous-system-root = { path = "../../nervous_system/root" }
+ic-sns-governance = { path = "../governance" }
+ic-sns-init = { path = "../init" }
+ic-sns-root = { path = "../root" }
+ic-types = { path = "../../types/types" }
+ic-utils = { path = "../../utils" }
+ledger-canister = {path = "../../rosetta-api/ledger_canister"}
+on_wire = { path = "../../rust_canisters/on_wire" }
+prost = "0.10.4"
+maplit = "1.0.2"
+tokio = { version = "1.17.0", features=["full"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ed25519-dalek = "1.0.1"
+rand_chacha = "0.2.2"
+rand_core = "0.5.1"

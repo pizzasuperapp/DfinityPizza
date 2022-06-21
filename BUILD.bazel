@@ -1,0 +1,123 @@
+load("//bazel:defs.bzl", "cargo_build", "gzip_compress", "optimized_canister")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("//bazel:buildifier.bzl", "buildifier_test")
+
+package(default_visibility = ["//visibility:public"])
+
+BUILDIFIER_EXCLUDES = [
+    "./.git/*",
+    "./gitlab-ci/src/git_changes/test_data/**",
+]
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = BUILDIFIER_EXCLUDES,
+    lint_mode = "fix",
+    mode = "fix",
+)
+
+# buildifier.check rule is used by buildifier_test
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = BUILDIFIER_EXCLUDES,
+    lint_mode = "warn",
+    mode = "diff",
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    tags = [
+        "external",
+        "local",
+        "no-sandbox",
+        "small",
+        "smoke",
+    ],
+)
+
+alias(
+    name = "bazelifier",
+    actual = "//rs/bazelifier",
+)
+
+cargo_build(
+    name = "binaries",
+    srcs = ["//rs:all_sources"],
+    binaries = [
+        "canister_sandbox",
+        "ic-btc-adapter",
+        "ic-consensus-pool-util",
+        "ic-crypto-csp",
+        "ic-regedit",
+        "ic-recovery",
+        "orchestrator",
+        "replica",
+        "state-tool",
+        "vsock_agent",
+    ],
+    cargo_flags = [
+        "--manifest-path",
+        "rs/Cargo.toml",
+    ],
+    profile = "release-stripped",
+)
+
+cargo_build(
+    name = "ledger_archive_wasm",
+    srcs = ["//rs:all_sources"],
+    binaries = [
+        "ledger-archive-node-canister",
+    ],
+    cargo_flags = [
+        "--manifest-path",
+        "rs/Cargo.toml",
+    ],
+    profile = "canister-release",
+    target = "wasm32-unknown-unknown",
+)
+
+optimized_canister(
+    name = "ledger_archive_canister",
+    wasm = ":ledger_archive_wasm",
+)
+
+CANISTERS = [
+    "cycles-minting-canister",
+    "genesis-token-canister",
+    "governance-canister",
+    "ledger-canister",
+    "nns-ui-canister",
+    "registry-canister",
+    "root-canister",
+    "sns-governance-canister",
+    "sns-root-canister",
+    "xnet-test-canister",
+]
+
+cargo_build(
+    name = "all_canisters",
+    srcs = ["//rs:all_sources"],
+    binaries = CANISTERS,
+    cargo_flags = [
+        "--manifest-path",
+        "rs/Cargo.toml",
+    ],
+    env_paths = {
+        "LEDGER_ARCHIVE_NODE_CANISTER_WASM_PATH": "$(execpath :ledger_archive_canister)",
+    },
+    profile = "canister-release",
+    target = "wasm32-unknown-unknown",
+    deps = [
+        ":ledger_archive_canister",
+    ],
+)
+
+[optimized_canister(
+    name = canister + "-opt.wasm",
+    wasm = ":" + canister + ".wasm",
+) for canister in CANISTERS]
+
+[gzip_compress(
+    name = canister + ".wasm.gz",
+    srcs = [":" + canister + "-opt.wasm"],
+) for canister in CANISTERS]

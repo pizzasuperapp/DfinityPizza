@@ -1,0 +1,37 @@
+load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
+
+filegroup(
+    name = "sources",
+    srcs = glob(
+        ["**"],
+        exclude = ["target/**"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "hmac",
+    srcs = glob(["src/**"]),
+    crate_name = "ic_crypto_internal_hmac",
+    edition = "2018",
+    visibility = ["//rs/crypto:__subpackages__"],
+    deps = [
+        "//rs/crypto/internal/crypto_lib/sha2",
+    ],
+)
+
+rust_doc_test(
+    name = "hmac_doc_test",
+    crate = ":hmac",
+)
+
+rust_test(
+    name = "hmac_test",
+    srcs = glob(["tests/**"]),
+    edition = "2018",
+    deps = [
+        ":hmac",
+        "@crate_index//:hex",
+        "@crate_index//:wycheproof",
+    ],
+)

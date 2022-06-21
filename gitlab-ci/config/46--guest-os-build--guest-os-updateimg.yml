@@ -1,0 +1,29 @@
+guest-os-updateimg-build:
+  extends:
+    - .ubuntu-nix-docker-protected
+    - .rules-parent-pipeline-autorun-on-trigger
+  retry: 1
+  stage: guest-os-build
+  needs:
+    - artifacts-upload-to-s3
+  variables:
+      BUILD_EXTRA_ARGS: ""
+      BUILD_EXTRA_SUFFIX: ""
+  script:
+    - |
+      set -xeuo pipefail
+
+      # set permissions to 777 to test if reproducibility is affected
+      # we compare image from docker-build-ic to image we get here
+      # see CI job: build-determinism-guest-update-img
+      chmod -R 777 ic-os/guestos/rootfs/
+
+      gitlab-ci/src/job_scripts/lib/guest-os-updateimg.sh
+
+# Build dev image. See diskimg for explanation.
+guest-os-updateimg-build-dev:
+  extends:
+    - guest-os-updateimg-build
+  variables:
+      BUILD_EXTRA_ARGS: "-t dev -p root"
+      BUILD_EXTRA_SUFFIX: "-dev"

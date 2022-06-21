@@ -1,0 +1,22 @@
+type AccountIdentifier = vec nat8;
+// Subaccount is an arbitrary 32-byte byte array.
+// Ledger uses subaccounts to compute the source address, which enables one
+// principal to control multiple ledger accounts.
+type SubAccount = blob;
+
+type GetBtcAddressArgs = record {
+    subaccount: opt SubAccount;
+};
+
+type GetBtcAddressResult = record {
+    address: text;
+};
+
+type GetWithdrawalAccountResult = record {
+    account: AccountIdentifier;
+};
+
+service : {
+    get_btc_address : (GetBtcAddressArgs) -> (GetBtcAddressResult);
+    get_withdrawal_account: () -> (GetWithdrawalAccountResult);
+}

@@ -1,0 +1,162 @@
+load("//toolchains/sysimage:toolchain.bzl", "disk_image", "docker_tar", "ext4_image", "summary_sha256sum", "tar_extract", "vfat_image")
+
+docker_tar(
+    name = "bootloader-tree.tar",
+    src = ":bootloader",
+    dep = glob(["bootloader/**"]),
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+docker_tar(
+    name = "rootfs-tree.tar",
+    src = ":rootfs",
+    dep = glob(["rootfs/**"]),
+    extra_args = [
+        "--build-arg",
+        "ROOT_PASSWORD=root",
+        "--build-arg",
+        "BASE_IMAGE=dfinity/guestos-base-dev@sha256:c8de9496654ddad9d4b337f07f19dfe780d6449323fb9223b254d21039a07c57",
+    ],
+    # This image is pretty big, therefore it is usually much faster to just rebuild it instead of fetching from the cache.
+    tags = ["no-remote-cache"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+vfat_image(
+    name = "partition-esp.tar",
+    src = ":bootloader-tree.tar",
+    partition_size = "100M",
+    subdir = "boot/efi",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+vfat_image(
+    name = "partition-grub.tar",
+    src = ":bootloader-tree.tar",
+    extra_files = {
+        ":grub.cfg": "/boot/grub/grub.cfg:0644",
+        ":grubenv": "/boot/grub/grub:0644",
+    },
+    partition_size = "100M",
+    subdir = "boot/grub",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+ext4_image(
+    name = "partition-config.tar",
+    partition_size = "100M",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+tar_extract(
+    name = "file_contexts",
+    src = ":rootfs-tree.tar",
+    path = "etc/selinux/default/contexts/files/file_contexts",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+# Declare the dependencies that we will have for the built filesystem images.
+# This needs to be done separately from the build rules because we want to
+# compute the hash over all inputs going into the image and derive the
+# "version.txt" file from it.
+IC_OS_IMAGE_DEPS = {
+    "bootfs": {
+        # base layer
+        ":rootfs-tree.tar": "/",
+
+        # additional files to install
+        ":extra_boot_args.dev": "/boot/extra_boot_args:0644",
+    },
+    "rootfs": {
+        # base layer
+        ":rootfs-tree.tar": "/",
+
+        # additional files to install
+        "//:canister_sandbox": "/opt/ic/bin/canister_sandbox:0755",
+        "//:ic-btc-adapter": "/opt/ic/bin/ic-btc-adapter:0755",
+        "//:ic-consensus-pool-util": "/opt/ic/bin/ic-consensus-pool-util:0755",
+        "//:ic-crypto-csp": "/opt/ic/bin/ic-crypto-csp:0755",
+        "//:ic-regedit": "/opt/ic/bin/ic-regedit:0755",
+        "//:ic-recovery": "/opt/ic/bin/ic-recovery:0755",
+        "//:orchestrator": "/opt/ic/bin/orchestrator:0755",
+        "//:replica": "/opt/ic/bin/replica:0755",
+        "//:state-tool": "/opt/ic/bin/state-tool:0755",
+        "//:vsock_agent": "/opt/ic/bin/vsock_agent:0755",
+    },
+}
+
+# This macro expands to compute the hash sum of all inputs individually, and
+# then aggregating the hash into a summary hash.
+summary_sha256sum(
+    name = "version.txt",
+    inputs = IC_OS_IMAGE_DEPS,
+    suffix = "-dev",
+)
+
+ext4_image(
+    name = "partition-boot.tar",
+    src = ":rootfs-tree.tar",
+    # Take the dependency list declared above, and add in the "version.txt"
+    # at the correct place.
+    extra_files = {
+        k: v
+        for k, v in (IC_OS_IMAGE_DEPS["bootfs"].items() + [(":version.txt", "/boot/version.txt:0644")])
+        if v != "/"
+    },
+    file_contexts = ":file_contexts",
+    partition_size = "1G",
+    subdir = "boot/",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+ext4_image(
+    name = "partition-root.tar",
+    src = ":rootfs-tree.tar",
+    # Take the dependency list declared above, and add in the "version.txt"
+    # at the correct place.
+    extra_files = {
+        k: v
+        for k, v in (IC_OS_IMAGE_DEPS["rootfs"].items() + [(":version.txt", "/opt/ic/share/version.txt:0644")])
+        if v != "/"
+    },
+    file_contexts = ":file_contexts",
+    partition_size = "3G",
+    # This image currently depends on //:binaries that changes almost always as it depends on //rs:all_sources,
+    # therefore cache hits are very rare. Do not upload it to the remote cache for now as it takes long.
+    tags = ["no-remote-cache"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+disk_image(
+    name = "disk.img.tar",
+    layout = "//ic-os/guestos/scripts:partitions.csv",
+    partitions = [
+        ":partition-esp.tar",
+        ":partition-grub.tar",
+        ":partition-config.tar",
+        ":partition-boot.tar",
+        ":partition-root.tar",
+    ],
+    # This image is not currently used by anything else - do not upload it to the cache for now as it takes long.
+    # TODO: s/no-cache/no-remote-cache/ when https://github.com/bazelbuild/bazel/pull/15453 will be merged and bazel 5.2.0 will be used.
+    tags = ["no-cache"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)

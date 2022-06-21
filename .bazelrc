@@ -1,0 +1,28 @@
+common --experimental_allow_tags_propagation
+build --incompatible_strict_action_env # use an environment with a static value for PATH and do not inherit LD_LIBRARY_PATH
+
+build --strategy_regexp=ic-os/guestos/.*=local
+
+build --remote_cache=buildfarm.dfinity.systems
+build --experimental_remote_cache_async
+build --incompatible_remote_build_event_upload_respect_no_cache
+build --noremote_upload_local_results # Whether to upload locally executed action results to the remote cache.
+
+build --execution_log_json_file=bazel-build-log.json
+
+build --bes_results_url=https://dash.buildfarm.dfinity.systems/invocation/
+build --bes_backend=bes.buildfarm.dfinity.systems
+
+build --remote_local_fallback
+build --workspace_status_command=$(pwd)/bazel/workspace_status.sh
+
+build:ci --noremote_local_fallback
+build:ci --remote_upload_local_results # Whether to upload locally executed action results to the remote cache.
+build:ci --repository_cache=/cache/bazel
+
+# no-op config for now as everything is set as default.
+build:dev
+
+# Run `bazel build ... --config=local` if you don't have access to the buildfarm infrastructure.
+build:local --remote_cache=
+build:local --bes_backend=

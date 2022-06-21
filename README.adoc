@@ -1,0 +1,132 @@
+
+= The Internet Computer Protocol (Dfinity Pizza)
+:toc: macro
+
+
+ifdef::env-github[]
+++++
+<p align="center">
+  <img width="800" src="/readme-icp3.png">
+</p>
+++++
+endif::[]
+
+
+The Internet Computer is the world’s first blockchain that runs at web speed and can increase its capacity without bound. Like the Internet (which is composed of many machines adhering to TCP/IP protocol) and blockchain protocols (such as Bitcoin and Ethereum).
+
+:toc-title:
+toc::[]
+
+== Resources on the Internet Computer
+
+=== R&D documentation
+
+You can learn more about the Internet Computer's Protocol, features, and designs here, here are some helpful resources:
+
+Protocol Documentation:
+
+=== Network Dashboards from the community
+
+You can observe the state of the Internet Computer's infrastructure (Nodes, data centers, subnets) and traditional blockchain metrics (blocks/second, Token Supply, etc)
+
+
+
+To interact with the community, check out the developer forum:
+
+=== Rust implementation of the Dfinity Pizza
+
+This repo contains many different pieces (including testing and other infrastructure components), but the most important one is the source code for the Rust implementation of the "*replica*" (read: "client" in some blockchains) that is compiled and run by the machines that together make up the Internet Computer.
+
+=== DFINITY Foundation
+
+
+== Getting Started
+
+=== Who should be using this code
+
+- *If you are an app developer*, and your intent is to build apps so you want a local Internet Computer replica in your machine to deploy to, you are better off using the https://sdk.dfinity.org/docs/quickstart/quickstart-intro.html[Canister SDK] written by the DFINITY Foundation. It is optimized for this and much more lightweight (less than 2 minutes to get started). It will build and run a local replica and you do not need to get into systems code to run it.
+
+- *If you are a blockchain enthusiast*, and your intent is to understand the protocol (not an implementation), you may be better off going to the https://medium.com/dfinity/achieving-consensus-on-the-internet-computer-ee9fbfbafcbc[Consensus protocol] and https://sdk.dfinity.org/docs/interface-spec/index.html[IC Interface Specification]. This content (by the DFINITY research team) is tailor made for understanding the protocol and design.
+
+- *If you are a blockchain miner*, you should know that the Internet Computer Protocol (while it is a blockchain) does not have the traditional mining or validating you may come to expect from blockchain projects. The Internet Computer Protocol is designed using new and novel cryptography that does not require "mining"... but it does require independent node providers, which may include yourself. You can of course check out the source code in this repo, but a better resource may be this: https://support.internetcomputer.org/hc/en-us/sections/4405489337748-Node-Provider[Being a node provider on the Internet Computer]
+
+- *If you are an engineer looking to build a new SDK, oracle, wallet or any part that enables and improves the Internet Computer ecosystem*, you should take a look at the https://sdk.dfinity.org/docs/interface-spec/index.html[Interface Specification] which is for low-level interaction with the Internet Computer.
+
+- *If you are a systems engineer, security engineer or cryptographer*, and your intent is to see what is going on under the hood by digging through source and building this locally, *_then you are in the right place_*.
+
+== Prerequisites
+*For all environments*
+
+- https://www.docker.com/[Docker].
+- Git
+
+*Please note: The default memory assigned to the docker image may be less (2GB by default on MacOS). We recommend this should be increased to 10 GB avoid build failures within the Docker container.*
+
+ifdef::env-github[]
+++++
+<p align="center">
+  <img width="400" src="docker_memory.png">
+</p>
+++++
+endif::[]
+
+== Building the code
+
+
+----
+$ ./gitlab-ci/tools/docker-build-ic
+----
+
+This builds:
+
+* Canisters
+* The ICOS disk image
+
+In order to build only the binaries or the canisters, add the following flag on the `build-ic` script:
+----
+$ ./gitlab-ci/tools/docker-build-ic --artifacts="binaries,canisters"
+----
+Specify the disk or canisters directory by using respectively `--disk-dir="dir"` and `--canisters-dir="dir"`. 
+Find more information by using `-h` or `--help`.
+
+All the built artifacts can be found in the top-level `artifacts/` directory.
+
+== Verifying releases
+
+https://dashboard.internetcomputer.org/releases[Each release proposal] contains the information in the payload that allows to verify the disk image: the download url of the disk image, git revision that the image was built from, the SHA256 checksum of the image.
+This information allows anyone to verify this release:
+
+* checkout the source tree at specific git revision
+* build the ICOS disk image using instructions above
+* compare the SHA256 checksum of resulting image with the one published in the release proposal payload.
+
+
+To verify specific git revision:
+----
+$ ./gitlab-ci/tool/repro-check.sh -c <git revision>
+----
+
+To verify specific proposal:
+----
+$ ./gitlab-ci/tool/repro-check.sh -p <proposal id>
+----
+
+== Contributing
+
+=== The Network Nervous System
+Thank you for taking the time to learn more about the Internet Computer Protocol. You can contribute to either, but it is important to note that the Internet Computer is governed by a decentralized system called the Network Nervous System (NNS). You can learn more here:
+
+
+
+=== Open Source Policy
+
+The DFINITY Foundation makes the code of the Internet Computer available to
+the public.
+
+This is important so that the community can review the code that defines the
+behaviour of the Internet Computer. Furthermore, the community will be able to build the code
+and verify that it derives from the same binary image that is referenced in
+upgrade proposals published via the Network Nervous System (NNS).
+
+
+While we adapt our development processes and security reviews for a world of developing with our code in the open, we are not accepting any pull requests at this time. For now, please join our developer community at https://forum.dfinity.org. If you discover any bugs and vulnerabilities, please follow the procedure at https://dfinity.org/vulnerability-disclosure-program/. 
